@@ -1,0 +1,186 @@
+﻿@{
+    ViewData["Title"] = "Image to Text Converter";
+}
+
+<div class="container text-center">
+    <h1>Image to Text Converter</h1>
+    <p>An online image-to-text converter to extract text from images.</p>
+
+    <div id="dropZone" class="border border-dark" style="border: 2px dashed #ddd; padding: 20px; margin: 20px auto; border-radius: 8px;">
+        <p>Select or drop image(s)</p>
+        <p>Supported formats: JPG, PNG, GIF, JFIF (JPEG), HEIC. Max: 10 files</p>
+        <form asp-action="ExtractText" method="post" enctype="multipart/form-data">
+            <input type="file" name="uploadedImages" id="fileInput" class="form-control mb-3" accept="image/*" multiple style="display: none;" />
+            <button type="button" class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">Select Files</button>
+            <div id="previewArea" class="d-flex flex-wrap justify-content-center mt-3"></div>
+            <button type="submit" class="btn btn-primary mt-3">Extract Text</button>
+        </form>
+    </div>
+
+    @if (ViewBag.ExtractedTexts != null)
+    {
+        <h3>Extracted Text:</h3>
+        @foreach (var text in ViewBag.ExtractedTexts)
+        {
+            <div class="text-container mb-4">
+                <textarea rows="5" class="form-control mb-2" readonly>@text</textarea>
+                <div class="d-flex justify-content-between">
+                    <button onclick="copyText(this)" class="btn btn-secondary">Copy</button>
+                    <button onclick="downloadText(this)" class="btn btn-success">Download</button>
+                </div>
+            </div>
+        }
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger mt-3">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const previewArea = document.getElementById('previewArea');
+    const dropZone = document.getElementById('dropZone');
+    let fileList = [];
+
+    fileInput.addEventListener('change', (event) => {
+        handleFiles(event.target.files);
+    });
+
+    dropZone.addEventListener('dragenter', (event) => {
+        event.preventDefault();
+        dropZone.style.borderColor = '#007bff';
+    });
+
+    dropZone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+    });
+
+    dropZone.addEventListener('dragleave', (event) => {
+        event.preventDefault();
+        dropZone.style.borderColor = '#ddd';
+    });
+
+    dropZone.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropZone.style.borderColor = '#ddd';
+        handleFiles(event.dataTransfer.files);
+    });
+
+    function handleFiles(files) {
+        const newFiles = Array.from(files);
+
+        // Check file count
+        if (fileList.length + newFiles.length > 10) {
+            alert('Maximum of 10 files allowed.');
+            return;
+        }
+
+        // Add new files to the existing file list
+        fileList = [...fileList, ...newFiles];
+
+        // Update the preview
+        updatePreview();
+
+        // Update the file input's files property
+        updateFileInput();
+    }
+
+    function updatePreview() {
+        previewArea.innerHTML = '';
+
+        fileList.forEach((file, index) => {
+            const fileDiv = document.createElement('div');
+            fileDiv.className = 'preview-file text-center';
+            fileDiv.style.margin = '10px';
+            fileDiv.style.padding = '10px';
+            fileDiv.style.border = '2px solid #007bff';
+            fileDiv.style.borderRadius = '8px';
+            fileDiv.style.display = 'inline-block';
+            fileDiv.style.textAlign = 'center';
+            fileDiv.style.width = '100px';
+            fileDiv.style.height = '140px';
+
+            const fileThumbnail = document.createElement('img');
+            fileThumbnail.style.width = '80px';
+            fileThumbnail.style.height = '80px';
+            fileThumbnail.style.objectFit = 'cover';
+            fileThumbnail.style.borderRadius = '4px';
+            fileThumbnail.style.marginBottom = '10px';
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    fileThumbnail.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                fileThumbnail.src = 'https://via.placeholder.com/80x80?text=PDF'; // Placeholder for non-image files
+            }
+
+            const fileName = document.createElement('p');
+            fileName.textContent = file.name;
+            fileName.style.fontSize = '12px';
+            fileName.style.margin = '0';
+            fileName.style.overflow = 'hidden';
+            fileName.style.textOverflow = 'ellipsis';
+            fileName.style.whiteSpace = 'nowrap';
+
+            const removeButton = document.createElement('button');
+            removeButton.textContent = 'Remove';
+            removeButton.className = 'btn btn-danger btn-sm mt-2';
+            removeButton.onclick = () => {
+                fileList.splice(index, 1);
+                updatePreview();
+                updateFileInput();
+            };
+
+            fileDiv.appendChild(fileThumbnail);
+            fileDiv.appendChild(fileName);
+            fileDiv.appendChild(removeButton);
+            previewArea.appendChild(fileDiv);
+        });
+    }
+
+    function updateFileInput() {
+        const dataTransfer = new DataTransfer();
+        fileList.forEach(file => dataTransfer.items.add(file));
+        fileInput.files = dataTransfer.files;
+    }
+
+    function copyText(button) {
+        const textarea = button.closest('.text-container').querySelector('textarea');
+        textarea.select();
+        document.execCommand('copy');
+        alert('Text copied to clipboard');
+    }
+
+    function downloadText(button) {
+        const textarea = button.closest('.text-container').querySelector('textarea'); // Найти связанный textarea
+        if (!textarea) {
+            alert("No text found to download.");
+            return;
+        }
+
+        const text = textarea.value; // Получить текст из textarea
+
+        if (!text) {
+            alert("The text area is empty.");
+            return;
+        }
+
+        // Создаем объект Blob с текстом
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+
+        // Создаем временную ссылку для скачивания
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'ExtractedText.txt'; // Имя файла
+        document.body.appendChild(link); // Временно добавляем ссылку в DOM
+        link.click(); // Имитируем клик по ссылке
+        document.body.removeChild(link); // Удаляем ссылку после скачивания
+    }
+</script>

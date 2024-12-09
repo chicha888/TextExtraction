@@ -1,0 +1,68 @@
+﻿@using TextExtraction.ViewModels
+@model RegisterVM
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<h2 class="text-center">Create an Account</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger" role="alert">
+                <strong>Sorry!</strong> - @TempData["Error"]
+            </div>
+        }
+
+        <form asp-action="Register" asp-controller="Account" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
+
+            <div class="form-group">
+                <label asp-for="Username" class="font-weight-bold">Username</label>
+                <input asp-for="Username" class="form-control" placeholder="Enter username" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email" class="font-weight-bold">Email address</label>
+                <input asp-for="Email" class="form-control" placeholder="Enter email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+                <small id="emailHelp" class="form-text text-muted">We'll never share your email with anyone else.</small>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password" class="font-weight-bold">Password</label>
+                <input asp-for="Password" class="form-control" id="password" placeholder="Password" type="password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ConfirmPassword" class="font-weight-bold">Confirm Password</label>
+                <input asp-for="ConfirmPassword" class="form-control" id="confirmPassword" placeholder="Confirm password" type="password" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <div class="form-group text-center">
+                <button type="submit" class="btn btn-primary btn-lg w-100 mb-3">Register</button>
+                <button class="btn btn-outline-secondary w-100" asp-controller="Home" asp-action="Index">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Optional: Add some JavaScript for enhancing UX (focus effect, tooltip, etc.) -->
+@section Scripts {
+    <script>
+        // Example: Focus effect on input fields
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', () => {
+                input.classList.add('shadow-lg');
+            });
+            input.addEventListener('blur', () => {
+                input.classList.remove('shadow-lg');
+            });
+        });
+    </script>
+}

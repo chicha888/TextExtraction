@@ -1,0 +1,137 @@
+﻿@model TextExtraction.ViewModels.ProfileVM
+
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<div class="container">
+    <h1>User Profile</h1>
+
+    <div class="user-details">
+        <p><strong>Username:</strong> @Model.Username</p>
+        <p><strong>Email:</strong> @Model.Email</p>
+        <form asp-controller="Account" asp-action="Logout">
+            <button class="btn btn-danger" type="submit">Logout</button>
+        </form>
+    </div>
+
+    <h2>Recent File History</h2>
+    @if (Model.fileHistory.Any())
+    {
+        @foreach (var history in Model.fileHistory.Take(10))
+        {
+            <div class="text-container mb-4">
+                <textarea rows="5" class="form-control mb-2" readonly>@history.ExtractedText</textarea>
+                <div class="d-flex justify-content-between">
+                    <button onclick="copyText(this)" class="btn btn-secondary">Copy</button>
+                    <button onclick="downloadText(this)" class="btn btn-success">Download</button>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p>No file history available.</p>
+    }
+</div>
+
+
+
+<style>
+    
+    .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+    }
+
+    .user-details {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+    }
+
+        .user-details p {
+            margin: 5px 0;
+            font-size: 16px;
+        }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        table th, table td {
+            text-align: left;
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        table th {
+            background-color: #f0f0f0;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+    .actions button {
+        padding: 5px 10px;
+        margin-right: 5px;
+        border: none;
+        background-color: #007BFF;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+        .actions button:hover {
+            background-color: #0056b3;
+        }
+</style>
+
+
+<script>
+    function copyText(button) {
+        const textarea = button.closest('.text-container').querySelector('textarea');
+        textarea.select();
+        document.execCommand('copy');
+        alert('Text copied to clipboard');
+    }
+
+    function downloadText(button) {
+        const textarea = button.closest('.text-container').querySelector('textarea'); // Найти связанный textarea
+        if (!textarea) {
+            alert("No text found to download.");
+            return;
+        }
+
+        const text = textarea.value; // Получить текст из textarea
+
+        if (!text) {
+            alert("The text area is empty.");
+            return;
+        }
+
+        // Создаем объект Blob с текстом
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+
+        // Создаем временную ссылку для скачивания
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'ExtractedText.txt'; // Имя файла
+        document.body.appendChild(link); // Временно добавляем ссылку в DOM
+        link.click(); // Имитируем клик по ссылке
+        document.body.removeChild(link); // Удаляем ссылку после скачивания
+    }
+</script>
